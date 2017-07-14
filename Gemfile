@@ -7,4 +7,7 @@ gem 'nokogiri'
 
 group :development do
   gem 'byebug'
+  gem 'minitest'
+  gem 'guard'
+  gem 'guard-minitest'
 end

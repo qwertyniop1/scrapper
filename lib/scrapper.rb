@@ -5,7 +5,7 @@ class Scrapper
   def initialize(url, options = {})
     @url = url
     @page_class = options[:list_page_class] || Page
-    @pagination_parameter = options[:pagination_parameter] || 'p'
+    @pagination_parameter = options[:pagination_parameter] || 'page'
     @logger = options[:logger] || NullLogger.new
     @options = options
   end
