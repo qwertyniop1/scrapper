@@ -1,5 +1,6 @@
 require 'curb'
 require 'nokogiri'
+require 'logger'
 
 require 'byebug'
 
@@ -71,18 +72,38 @@ def get_html(url)
   http.body_str
 end
 
+class NullLogger < Logger
+  def initialize(*args)
+  end
+
+  def add(*args, &block)
+  end
+end
+
 class Scrapper
-  def initialize(url, page_class = nil, options = {})
+  def initialize(url, options = {})
     @url = url
-    @page_class = page_class || Page
+    @page_class = options[:list_page_class] || Page
     @pagination_parameter = options[:pagination_parameter] || 'p'
+    @logger = options[:logger] || NullLogger.new
+    @options = options
   end
 
   def parse
-    start_page = @page_class.new(@url)
+    @logger.info "Start processing url: #{@url}"
 
-    pages = Array.new(start_page.parse.pages_count) do |index|
-      @page_class.new("#{@url.chomp('/')}/?#{@pagination_parameter}=#{index + 1}")
+    start_page = @page_class.new(@url, @options)
+
+    pages_quantity = start_page.parse.respond_to?(:pages_count) ? start_page.pages_count : 0
+
+    return [start_page.payload] unless pages_quantity > 1
+
+    @logger.info "Found #{pages_quantity - 1} extra pages:"
+
+    pages = Array.new(pages_quantity) do |index|
+      page_url = "#{@url.chomp('/')}/?#{@pagination_parameter}=#{index + 1}"
+      @logger.info "\t#{index}: #{page_url}" unless index.zero?
+      @page_class.new(page_url, @options)
     end
 
     payload = pages.drop(1).map { |page| page.parse.payload }
@@ -98,13 +119,17 @@ class Page
     @url = url
     @document = nil
     @payload = nil
+    @logger = options[:logger] || NullLogger.new
+    @options = options
   end
 
   def parse
+    @logger.info "Fetching HTML from #{@url}"
+
     html = get_html(@url)
     @document = HTMLDocument.new(html)
 
-    @payload = yield
+    @payload = yield if block_given?
 
     self
   end
@@ -117,11 +142,21 @@ end
 class ListPage < Page
   def initialize(url, options = {})
     super
+    @page_class = options[:item_page_class] || Page
   end
 
   def parse
     super do
-      items = item_link_element.map { |link| link[:href] }
+      links = item_link_element
+      @logger.info "Found #{links.size} links at #{@url}:"
+      urls = links.each_with_index.map do |link, index|
+        url = link[:href]
+        @logger.info "\t#{index + 1}: #{url}"
+        url
+      end
+      urls.map do |url|
+        @page_class.new(url, @options).parse
+      end
     end
   end
 
@@ -136,6 +171,18 @@ class ListPage < Page
   def item_link_element
     raise AttributeError 'No block given' unless block_given?
     yield @document
+  end
+end
+
+class ItemPage < Page
+  def initialize(url, options = {})
+    super
+  end
+
+  def parse
+    super do
+      items = nil
+    end
   end
 end
 
@@ -182,9 +229,16 @@ end
 def main
   target_url = ARGV.first
 
-  scrapper = Scrapper.new(target_url, PetsonicListPage)
+  logger = Logger.new(STDOUT)
 
-  p scrapper.parse
+  scrapper = Scrapper.new(
+    target_url,
+    list_page_class: PetsonicListPage,
+    item_page_class: ItemPage,
+    logger: logger
+  )
+
+  scrapper.parse
 end
 
 main
