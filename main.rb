@@ -37,9 +37,12 @@ class HTMLDocument
     query "[contains(concat(' ', @#{attribute}, ' '), ' #{value} ')]"
   end
 
-  def class_name(class_name)
-    attribute(:class, class_name)
-    self
+  def class_name(value)
+    attribute(:class, value)
+  end
+
+  def id(value)
+    attribute(:id, value)
   end
 
   def first
@@ -147,7 +150,7 @@ class ListPage < Page
 
   def parse
     super do
-      links = item_link_element
+      links = item_link_elements
       @logger.info "Found #{links.size} links at #{@url}:"
       urls = links.each_with_index.map do |link, index|
         url = link[:href]
@@ -155,7 +158,7 @@ class ListPage < Page
         url
       end
       urls.map do |url|
-        @page_class.new(url, @options).parse
+        @page_class.new(url, @options).parse.payload
       end
     end
   end
@@ -168,8 +171,8 @@ class ListPage < Page
     end
   end
 
-  def item_link_element
-    raise AttributeError 'No block given' unless block_given?
+  def item_link_elements
+    raise ArgumentError, 'No block given' unless block_given?
     yield @document
   end
 end
@@ -181,8 +184,31 @@ class ItemPage < Page
 
   def parse
     super do
-      items = nil
+      header = header_element.text
+      image = image_element[:src]
+
+      prices.map do |item|
+        item[:name] = "#{header} - #{item[:name].text}"
+        item[:image] = image
+        item[:price] = item[:price].text
+        item
+      end
     end
+  end
+
+  def header_element
+    raise ArgumentError, 'No block given' unless block_given?
+    yield @document
+  end
+
+  def image_element
+    raise ArgumentError, 'No block given' unless block_given?
+    yield @document
+  end
+
+  def prices
+    raise ArgumentError, 'No block given' unless block_given?
+    yield @document
   end
 end
 
@@ -212,7 +238,7 @@ class PetsonicListPage < ListPage
     end
   end
 
-  def item_link_element
+  def item_link_elements
     super do |document|
       document
         .all
@@ -226,6 +252,53 @@ class PetsonicListPage < ListPage
   end
 end
 
+class PetsonicItemPage < ItemPage
+  def initialize(url, options = {})
+    super
+    @header_class = options[:header_class] || 'product-name'
+    @image_id = options[:image_class] || 'image-block'
+    @price_class = options[:price_class] || 'attribute_labels_lists'
+  end
+
+  def header_element
+    super do |document|
+      document
+        .all
+        .tag(:div)
+        .class_name(@header_class)
+        .children
+        .tag(:h1)
+        .get
+    end
+  end
+
+  def image_element
+    super do |document|
+      document
+        .all
+        .tag(:div)
+        .id(@image_id)
+        .all
+        .tag(:img)
+        .get
+    end
+  end
+
+  def prices
+    super do |document|
+      variations = document
+        .all
+        .tag(:ul)
+        .class_name(@price_class)
+        .children
+        .tag(:li)
+        .select
+
+      variations.map { |item| { name: item.element_children[0], price: item.element_children[1] } }
+    end
+  end
+end
+
 def main
   target_url = ARGV.first
 
@@ -234,11 +307,13 @@ def main
   scrapper = Scrapper.new(
     target_url,
     list_page_class: PetsonicListPage,
-    item_page_class: ItemPage,
+    item_page_class: PetsonicItemPage,
     logger: logger
   )
 
-  scrapper.parse
+  res = scrapper.parse
+  p res
+  puts res
 end
 
 main
