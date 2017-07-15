@@ -23,7 +23,11 @@ class ListPage < Page
 
   def pages_count(count = 0)
     if block_given?
-      yield(@document).text.to_i
+      begin
+        yield(@document).text.to_i
+      rescue
+        0
+      end
     else
       count
     end

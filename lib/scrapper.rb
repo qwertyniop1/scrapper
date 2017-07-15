@@ -17,7 +17,7 @@ class Scrapper
 
     pages_quantity = start_page.parse.respond_to?(:pages_count) ? start_page.pages_count : 0
 
-    return [start_page.payload] unless pages_quantity > 1
+    return start_page.payload unless pages_quantity > 1
 
     @logger.info "Found #{pages_quantity - 1} extra pages:"
 
@@ -27,8 +27,11 @@ class Scrapper
       @page_class.new(page_url, @options)
     end
 
-    payload = pages.drop(1).map { |page| page.parse.payload }
+    payload = pages.drop(1).map do |page|
+      page.parse
+      page.payload
+    end
 
-    ([start_page.payload] + payload).flatten
+    ([start_page.payload] + payload).flatten.compact
   end
 end

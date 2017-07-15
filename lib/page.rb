@@ -1,12 +1,6 @@
-require 'curb'
-
 require_relative 'null_logger'
 require_relative 'html_document'
-
-def get_html(url)
-  http = Curl.get(url)
-  http.body_str
-end
+require_relative 'network'
 
 class Page
   attr_reader :payload
@@ -20,13 +14,18 @@ class Page
   end
 
   def parse
-    @logger.info "Fetching HTML from #{@url}"
+    tries = @options[:request_tries] || 5
+    timeout = @options[:request_timeout] || 30
+    html = fetch(@url, tries, timeout, @logger)
+    return nil if html.nil?
 
-    html = get_html(@url)
     @document = HTMLDocument.new(html)
 
-    @payload = yield if block_given?
-
+    begin
+      @payload = yield if block_given?
+    rescue
+      @logger.error 'An error occured during parsing'
+    end
     self
   end
 
