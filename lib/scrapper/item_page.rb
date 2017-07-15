@@ -13,7 +13,7 @@ class ItemPage < Page
       prices.map do |item|
         item[:name] = "#{header} - #{item[:name].text}"
         item[:image] = image
-        item[:price] = item[:price].text
+        item[:price] = item[:price].text.strip
         item
       end
     end
