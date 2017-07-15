@@ -23,8 +23,9 @@ class Page
 
     begin
       @payload = yield if block_given?
-    rescue
+    rescue => error
       @logger.error 'An error occured during parsing'
+      @logger.debug error.message
     end
     self
   end
