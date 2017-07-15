@@ -44,6 +44,8 @@ class PetsonicItemPage < ItemPage
         .tag(:li)
         .select
 
+      return [{ price: document.all.tag(:span).id('price_display').get }] if variations.empty?
+
       variations.map { |item| { name: item.element_children[0], price: item.element_children[1] } }
     end
   end

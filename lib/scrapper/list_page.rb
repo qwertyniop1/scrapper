@@ -21,7 +21,7 @@ class ListPage < Page
       threads = @options[:threads] || 0
       Parallel.map(urls, in_threads: threads) do |url|
         @page_class.new(url, @options).parse.payload
-      end
+      end.flatten
     end
   end
 

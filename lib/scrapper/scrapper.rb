@@ -35,6 +35,6 @@ class Scrapper
     end_time = Time.now
     @logger.info "Scrapping finished succesfully in #{end_time - start_time} seconds"
 
-    ([start_page.payload] + payload).flatten.compact
+    (start_page.payload + payload).flatten.compact
   end
 end

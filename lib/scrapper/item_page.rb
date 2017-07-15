@@ -11,7 +11,7 @@ class ItemPage < Page
       image = image_element[:src]
 
       prices.map do |item|
-        item[:name] = "#{header} - #{item[:name].text}"
+        item[:name] = item[:name] ? "#{header} - #{item[:name].text}" : header
         item[:image] = image
         item[:price] = item[:price].text.strip
         item

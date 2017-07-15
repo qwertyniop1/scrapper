@@ -8,7 +8,7 @@ class Page
   def initialize(url, options = {})
     @url = url
     @document = nil
-    @payload = nil
+    @payload = []
     @logger = options[:logger] || NullLogger.new
     @options = options
   end
