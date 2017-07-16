@@ -7,7 +7,7 @@ class ItemPage < Page
 
   def parse
     super do
-      header = header_element.text
+      header = header_element.text.strip
       image = image_element[:src]
 
       prices.map do |item|

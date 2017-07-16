@@ -16,16 +16,32 @@ def save_to_csv(data, filename, columns)
   end
 end
 
+def create_logger(level)
+  return NullLogger.new if level == :silent
+
+  logger = Logger.new(STDOUT)
+  logger.level = level
+  logger.formatter = proc do |severity, datetime, progname, msg|
+    "[#{severity}] #{msg}\n"
+  end
+  logger
+end
+
 def main
+  begin
+    options = ArgumentsParser.parse(ARGV)
+  rescue OptionParser::InvalidOption => error
+    puts error
+    exit(1)
+  end
   if ARGV.size < 2
     puts 'Error! Too few arguments'
     exit(1)
   end
-  options = ArgumentsParser.parse(ARGV)
   target_url = ARGV.first
   output_filename = ARGV[1]
 
-  logger = Logger.new(STDOUT)
+  logger = create_logger(options.log_level)
 
   scrapper = Scrapper.new(
     target_url,
@@ -38,7 +54,13 @@ def main
     threads: options.threads
   )
 
+  logger.info "Start processing url: #{target_url}"
+  start_time = Time.now
+
   results = scrapper.parse
+
+  end_time = Time.now
+  logger.info "Scrapping finished in #{end_time - start_time} seconds"
 
   if results.nil? || results.empty?
     logger.warn 'No data has been scrapped. Nothing to save.'
@@ -50,7 +72,3 @@ def main
 end
 
 main
-
-#########
-# TODO: args validation
-# TODO: logger level

@@ -5,9 +5,9 @@ class ArgumentsParser
   def self.parse(args)
     arguments = OpenStruct.new
     arguments.request_timeout = 30
-    arguments.request_tries = 5
+    arguments.request_tries = 3
     arguments.threads = 2
-    arguments.level = :info
+    arguments.log_level = :info
 
     parser = OptionParser.new do |options|
       options.banner = 'Usage: scrapper.rb URL OUTPUT_PATH [options]'
@@ -38,9 +38,12 @@ class ArgumentsParser
       options.on(
         '-l [LEVEL]',
         '--log-level [LEVEL]',
-        [:debug, :info, :warn, :error],
+        [:debug, :info, :warn, :error, :silent],
         'Specify level of logging (debug, info, warn, error)'
-      ) { |level| arguments.level = level }
+      ) do |level|
+        level = :info if level.nil?
+        arguments.log_level = level
+      end
     end
 
     parser.parse! args
