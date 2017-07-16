@@ -1,3 +1,5 @@
+require 'parallel'
+
 require_relative 'page'
 
 class ListPage < Page
@@ -15,9 +17,11 @@ class ListPage < Page
         @logger.info "\t#{index + 1}: #{url}"
         url
       end
-      urls.map do |url|
+
+      threads = @options[:threads] || 0
+      Parallel.map(urls, in_threads: threads) do |url|
         @page_class.new(url, @options).parse.payload
-      end
+      end.flatten
     end
   end
 

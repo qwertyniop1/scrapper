@@ -5,6 +5,8 @@ gem 'curb'
 
 gem 'nokogiri'
 
+gem 'parallel'
+
 group :development do
   gem 'byebug'
   gem 'minitest'

@@ -11,15 +11,12 @@ class Scrapper
   end
 
   def parse
-    @logger.info "Start processing url: #{@url}"
-
     start_page = @page_class.new(@url, @options)
-
     pages_quantity = start_page.parse.respond_to?(:pages_count) ? start_page.pages_count : 0
 
     return start_page.payload unless pages_quantity > 1
 
-    @logger.info "Found #{pages_quantity - 1} extra pages:"
+    @logger.info "Found #{pages_quantity - 1} extra page(s):"
 
     pages = Array.new(pages_quantity) do |index|
       page_url = "#{@url.chomp('/')}/?#{@pagination_parameter}=#{index + 1}"
@@ -32,6 +29,6 @@ class Scrapper
       page.payload
     end
 
-    ([start_page.payload] + payload).flatten.compact
+    (start_page.payload + payload).flatten.compact
   end
 end

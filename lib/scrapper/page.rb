@@ -8,7 +8,7 @@ class Page
   def initialize(url, options = {})
     @url = url
     @document = nil
-    @payload = nil
+    @payload = []
     @logger = options[:logger] || NullLogger.new
     @options = options
   end
@@ -23,8 +23,9 @@ class Page
 
     begin
       @payload = yield if block_given?
-    rescue
+    rescue => error
       @logger.error 'An error occured during parsing'
+      @logger.debug error.message
     end
     self
   end
