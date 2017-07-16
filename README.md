@@ -1,6 +1,7 @@
 # Scrapper
 
 Essential configurable multithread scrapper for [Petsonic](https://www.petsonic.com/)
+**Theoretical questions [HERE](https://github.com/qwertyniop1/scrapper/blob/master/theory.md)**
 
 ### Requirements
 * Ruby 2.4.0
