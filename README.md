@@ -6,9 +6,11 @@ Essential configurable multithread scrapper for [Petsonic](https://www.petsonic.
 * Ruby 2.4.0
 
 ### Install
+```
 git clone https://github.com/qwertyniop1/scrapper.git
 cd scrapper
 bundle install
+```
 
 ### Usage
 Utility takes 2 required parameters: URL of category index page and output file name.
